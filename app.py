@@ -7,18 +7,17 @@ st.set_page_config(page_title="태이와 함께하는 하루", page_icon="👶",
 
 # 2. 보안 설정 (Secrets 확인)
 try:
+    # 스트림릿 Settings -> Secrets에 저장한 키를 가져옵니다.
     API_KEY = st.secrets["GOOGLE_API_KEY"]
 except Exception:
     st.error("Secrets 설정에서 GOOGLE_API_KEY를 찾을 수 없습니다. Streamlit Settings를 확인해주세요.")
     st.stop()
 
-# 3. AI 모델 연결 설정 (최신 표준 방식)
-# transport='rest'를 제거하고 기본 연결을 사용하여 안정성을 높였습니다.
-genai.configure(api_key=API_KEY)
+# 3. AI 모델 연결 설정 (가장 안정적인 연결 방식 지정)
+genai.configure(api_key=API_KEY, transport='rest')
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # 4. 태이 탄생일 계산 (2025년 11월 23일)
-# 치윤 님의 요청에 따른 정확한 날짜입니다.
 birth_date = datetime(2025, 11, 23)
 today = datetime.now()
 days_since_birth = (today - birth_date).days
@@ -51,14 +50,13 @@ if prompt := st.chat_input("육아 고민이나 궁금한 점을 물어보세요
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        try:
-            # AI에게 답변 요청
-            response = model.generate_content(prompt)
-            if response and response.text:
-                st.markdown(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
-                st.toast("치윤 님이 지예 님을 응원하고 있어요! 💖")
-        except Exception as e:
-            # 에러 발생 시 상세 메시지 출력 (디버깅용)
-            st.error("AI 연결에 잠시 문제가 생겼습니다. 잠시 후 다시 시도해주세요.")
-            st.info("팁: 스트림릿 관리 화면에서 'Reboot App'을 눌러보세요!")
+        with st.spinner("태이 비서가 생각 중이에요... 👶"):
+            try:
+                response = model.generate_content(prompt)
+                if response and response.text:
+                    st.markdown(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                    st.toast("치윤 님이 지예 님을 응원하고 있어요! 💖")
+            except Exception as e:
+                st.error("AI 연결에 잠시 문제가 생겼습니다. 잠시 후 다시 시도해주세요.")
+                st.info("팁: 스트림릿 관리 화면에서 'Reboot App'을 눌러보세요!")
